@@ -17,10 +17,10 @@ function Dashboard() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-slate-800 rounded-lg shadow-lg overflow-hidden">
           <div className="px-6 py-8">
-            <h2 className="text-center text-2xl font-extrabold text-gray-100">
+            <h2 className="text-center text-2xl capitalize font-extrabold text-gray-100">
               {user && user.fullname}
             </h2>
-            <p className="mt-4 text-center text-gray-300">You're logged in as {user && user.role}.</p>
+            <p className="mt-4 text-center text-gray-300">You're logged in as {user && user.role}s.</p>
           </div>
         </div>
       </div>

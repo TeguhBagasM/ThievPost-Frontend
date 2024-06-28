@@ -3,6 +3,8 @@ import UserIcon from "./../images/user-icon.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, reset } from "../features/authSlice";
 import { NavLink, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Navbar() {
   const dispatch = useDispatch();
@@ -12,7 +14,10 @@ function Navbar() {
   const logout = () => {
     dispatch(LogOut());
     dispatch(reset());
-    navigate("/login");
+    toast.success("Logout Successfully", { autoClose: 3000 });
+    setTimeout(() => {
+      navigate("/login");
+    }, 2000);
   };
 
   return (
@@ -29,9 +34,31 @@ function Navbar() {
         <div className="relative">
           <div className="dropdown dropdown-end">
             <button className="btn btn-ghost btn-circle">
-              <div className="w-10 h-10 rounded-full overflow-hidden">
-                <img className="object-cover w-full h-full" src={UserIcon} alt="Avatar" />
-              </div>
+              {!user && (
+                <button className="btn btn-square btn-ghost">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    className="inline-block h-5 w-5 stroke-current"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    ></path>
+                  </svg>
+                </button>
+              )}
+              {user && (
+                <div className="flex items-center">
+                  <span className="text-white text-lg">{user.fullname}</span>
+                  <div className="w-10 h-10 rounded-full overflow-hidden ml-2 mr-10">
+                    <img className="object-cover w-full h-full" src={UserIcon} alt="Avatar" />
+                  </div>
+                </div>
+              )}
             </button>
             <ul className="mt-2 w-48 p-2 shadow-lg menu dropdown-content bg-base-100 rounded-box text-black right-0 z-50">
               {user && user.role === "admin" && (
@@ -134,6 +161,7 @@ function Navbar() {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }

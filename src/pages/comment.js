@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import Navbar from "../components/Navbar";
-import Comments from "../components/Comment"; // Ubah nama komponen Comment di sini
+import Comments from "../components/PostListAll"; // Ubah nama komponen Comment di sini
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getMe } from "../features/authSlice";
