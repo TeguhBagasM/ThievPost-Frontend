@@ -3,9 +3,16 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserIcon from "../images/user-icon.jpg";
-import { format } from "date-fns"; // Import fungsi format dari date-fns
+import { format } from "date-fns";
 import { useSelector } from "react-redux";
-import { FaChevronLeft, FaPaperPlane, FaChevronRight, FaEye, FaSearch } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaPaperPlane,
+  FaChevronRight,
+  FaSearch,
+  FaHeart,
+  FaComment,
+} from "react-icons/fa";
 
 function PostListPublic() {
   const { user } = useSelector((state) => state.auth);
@@ -14,21 +21,23 @@ function PostListPublic() {
   const [loading, setLoading] = useState(true);
 
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState(""); // State untuk komentar baru
-  const [postIdForComments, setPostIdForComments] = useState(null); // State untuk menyimpan postId yang sedang ditampilkan komentarnya
+  const [newComment, setNewComment] = useState("");
+  const [postIdForComments, setPostIdForComments] = useState(null);
 
   const [loadingComments, setLoadingComments] = useState(true);
 
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
-  // State untuk pencarian
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
-  // State untuk paginasi
   const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(8); // Jumlah postingan per halaman
-  // State untuk modal pencarian
+  const [postsPerPage] = useState(8);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
+  // State untuk menyimpan status like
+  const [likedPosts, setLikedPosts] = useState({});
+  const [likedComments, setLikedComments] = useState({});
+  const [totalLikes, setTotalLikes] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +54,22 @@ function PostListPublic() {
     fetchData();
   }, []);
 
-  // Fungsi untuk melakukan pencarian berdasarkan input pengguna
+  useEffect(() => {
+    // Menghitung total likes untuk setiap komentar
+    const calculateTotalLikes = () => {
+      const likesMap = {};
+      comments.forEach((comment) => {
+        const likes = Object.keys(likedComments).filter(
+          (key) => likedComments[key] && parseInt(key) === comment.id
+        );
+        likesMap[comment.id] = likes.length;
+      });
+      setTotalLikes(likesMap);
+    };
+
+    calculateTotalLikes();
+  }, [comments, likedComments]);
+
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
     const results = posts.filter((post) =>
@@ -56,7 +80,6 @@ function PostListPublic() {
 
   const handleSendComment = async () => {
     try {
-      // Validasi bahwa content tidak boleh kosong
       if (!newComment.trim()) {
         toast.error("Please enter a comment", { autoClose: 2000 });
         return;
@@ -68,8 +91,6 @@ function PostListPublic() {
         postId: postIdForComments,
       };
 
-      console.log("Sending comment data:", commentData);
-
       const response = await axios.post(`http://localhost:5000/comments`, commentData);
       setComments([...comments, response.data]);
       setNewComment("");
@@ -78,6 +99,7 @@ function PostListPublic() {
       toast.error("Failed to add comment");
     }
   };
+
   const handleCommentChange = (e) => {
     setNewComment(e.target.value);
   };
@@ -96,22 +118,18 @@ function PostListPublic() {
     }
   };
 
-  // Fungsi untuk menutup modal komentar
   const closeCommentsModal = () => {
     setIsCommentsModalOpen(false);
   };
 
-  // Fungsi untuk membuka modal pencarian
   const openSearchModal = () => {
     setIsSearchModalOpen(true);
   };
 
-  // Fungsi untuk menutup modal pencarian
   const closeSearchModal = () => {
     setIsSearchModalOpen(false);
   };
 
-  // Logika untuk menampilkan postingan sesuai halaman saat ini
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
   const currentPosts =
@@ -119,8 +137,22 @@ function PostListPublic() {
       ? searchResults.slice(indexOfFirstPost, indexOfLastPost)
       : posts.slice(indexOfFirstPost, indexOfLastPost);
 
-  // Mengubah halaman
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Fungsi untuk menangani klik like
+  const handleLikeClickPosts = (postId) => {
+    setLikedPosts((prevLikedPosts) => ({
+      ...prevLikedPosts,
+      [postId]: !prevLikedPosts[postId],
+    }));
+  };
+  // Fungsi untuk menangani klik like
+  const handleLikeClickComments = (commentId) => {
+    setLikedComments((prevLikedComments) => ({
+      ...prevLikedComments,
+      [commentId]: !prevLikedComments[commentId], // Mengubah status like komentar
+    }));
+  };
 
   if (loading) {
     return <div className="container mx-auto mt-5">Loading...</div>;
@@ -173,16 +205,23 @@ function PostListPublic() {
                 )}
               </div>
               {user && (
-                <div className="card-actions justify-end mt-4">
-                  <>
-                    <button
-                      className="btn btn-sm btn-outline btn-secondary ml-2"
-                      onClick={() => openCommentsModal(post.id)} // Buka modal komentar
-                      title="View Comments"
-                    >
-                      <FaEye />
-                    </button>
-                  </>
+                <div className="card-actions justify-between mt-4">
+                  <button
+                    className="btn btn-sm btn-outline btn-secondary"
+                    onClick={() => openCommentsModal(post.id)}
+                    title="View Comments"
+                  >
+                    <FaComment />
+                  </button>
+                  <button
+                    className={`btn btn-sm btn-ghost hover:bg-slate-700 ${
+                      likedPosts[post.id] ? "text-red-500" : "text-gray-500"
+                    }`}
+                    onClick={() => handleLikeClickPosts(post.id)}
+                    title="Like Post"
+                  >
+                    <FaHeart />
+                  </button>
                 </div>
               )}
             </div>
@@ -202,7 +241,7 @@ function PostListPublic() {
           <h3 className="font-bold text-lg mb-3">Search Posts</h3>
           <input
             type="text"
-            placeholder="Search by title..."
+            placeholder="Search by title or fullname..."
             value={searchTerm}
             onChange={handleSearch}
             className="px-3 py-2 w-full text-black sm:w-64 border border-pink-300 rounded-md focus:outline-none focus:ring focus:ring-pink-400 mb-4"
@@ -227,51 +266,59 @@ function PostListPublic() {
             <div className="space-y-4">
               {comments.length === 0 ? (
                 <div className="text-center text-gray-300">
-                  <p className="font-bold text-xl">No comments yet</p>
-                  <p>Start a conversation</p>
+                  <p className="mb-4">No comments yet.</p>
                 </div>
               ) : (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className={`chat ${
-                      comment.userId === user.id ? "chat-end justify-end" : "chat-start"
-                    }`}
-                  >
-                    <div
-                      className={`chat-bubble ${
-                        comment.userId === user.id ? "chat-bubble-info" : "chat-bubble-secondary"
-                      }`}
-                    >
-                      <div className="chat-header">
-                        <span className="chat-username">{comment.user?.fullname}, </span>
-                        <span className="chat-timestamp">
-                          {format(new Date(comment.createdAt), "dd MMM yyyy HH:mm:ss")}
-                        </span>
-                      </div>
-                      <div className="chat-content">{comment.content}</div>
+                comments.map((comment, commentIdx) => (
+                  <div key={commentIdx} className="bg-slate-900 p-2 rounded-md">
+                    <div className="flex justify-start items-center mb-2">
+                      <div className="text-lg text-gray-200 mr-4">{comment.user.fullname}</div>
+                      <span className="text-sm text-gray-400">
+                        {format(new Date(comment.createdAt), "dd MMM yyyy HH:mm:ss")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-white">{comment.content}</p>
+                    </div>
+                    <div className="flex justify-end items-center">
+                      <button
+                        className={`btn btn-sm btn-ghost hover:bg-slate-700 ${
+                          likedComments[comment.id] ? "text-red-500" : "text-gray-500"
+                        }`}
+                        onClick={() => handleLikeClickComments(comment.id)}
+                        title="Like Comment"
+                      >
+                        <FaHeart />
+                      </button>
+                      <span className="text-sm text-gray-300 mr-2">
+                        {totalLikes[comment.id]} {totalLikes[comment.id] === 1 ? "like" : "likes"}
+                      </span>
                     </div>
                   </div>
                 ))
               )}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  name="comment"
-                  value={newComment}
-                  onChange={handleCommentChange}
-                  placeholder="Add a comment..."
-                  className="input input-bordered text-black w-full focus:outline-none focus:ring-pink-500 focus:border-pink-500"
-                />
-                <button
-                  className="btn btn-sm bg-pink-600 text-white hover:bg-pink-400"
-                  onClick={handleSendComment}
-                >
-                  <FaPaperPlane />
-                </button>
-              </div>
             </div>
           )}
+
+          {user && (
+            <div className="flex items-center space-x-2 mt-4">
+              <input
+                type="text"
+                name="comment"
+                value={newComment}
+                onChange={handleCommentChange}
+                placeholder="Add a comment..."
+                className="input input-bordered text-black w-full focus:outline-none focus:ring-pink-500 focus:border-pink-500"
+              />
+              <button
+                className="btn btn-sm bg-pink-600 text-white hover:bg-pink-400"
+                onClick={handleSendComment}
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
+          )}
+
           <div className="flex justify-end mt-4">
             <button
               className="btn btn-sm bg-gray-600 text-white hover:bg-gray-400 mr-2"
@@ -286,8 +333,7 @@ function PostListPublic() {
   );
 }
 
-// Komponen Pagination
-const Pagination = ({ postsPerPage, totalPosts, paginate, currentPage }) => {
+function Pagination({ postsPerPage, totalPosts, paginate, currentPage }) {
   const pageNumbers = [];
 
   for (let i = 1; i <= Math.ceil(totalPosts / postsPerPage); i++) {
@@ -330,6 +376,6 @@ const Pagination = ({ postsPerPage, totalPosts, paginate, currentPage }) => {
       </ul>
     </nav>
   );
-};
+}
 
 export default PostListPublic;

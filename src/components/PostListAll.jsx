@@ -9,10 +9,10 @@ import { useSelector } from "react-redux"; // Import useSelector dari react-redu
 import {
   FaChevronLeft,
   FaChevronRight,
-  FaEye,
   FaTrashAlt,
   FaSearch,
   FaPaperPlane,
+  FaComment,
 } from "react-icons/fa";
 
 function PostListAll() {
@@ -217,7 +217,7 @@ function PostListAll() {
                       onClick={() => openCommentsModal(post.id)} // Buka modal komentar
                       title="View Comments"
                     >
-                      <FaEye />
+                      <FaComment />
                     </button>
                     <button
                       className="btn btn-sm btn-outline btn-error ml-2"
@@ -235,7 +235,7 @@ function PostListAll() {
                       onClick={() => openCommentsModal(post.id)} // Buka modal komentar
                       title="View Comments"
                     >
-                      <FaEye />
+                      <FaComment />
                     </button>
                   </>
                 )}
